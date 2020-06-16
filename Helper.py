@@ -3,10 +3,18 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-
-from sklearn.preprocessing import LabelEncoder
-
 from datetime import datetime
+
+
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.impute import SimpleImputer
+from sklearn.model_selection import GridSearchCV
+
+
+import warnings
+warnings.filterwarnings('ignore')
+
+
 
 
 column_transform_dict = {'LNR':'id', 'AGER_TYP':'age_type', 'ALTER_HH':'age_HH', 'ALTERSKATEGORIE_GROB':'age_prename',
@@ -68,26 +76,29 @@ def plot_comparison_charts(column, df1, df2):
     fig, (ax1, ax2) = plt.subplots(figsize=(12,4), ncols=2)
     sns.countplot(x = column, data=df1, ax=ax1, palette="husl")
     ax1.set_xlabel('Value')
-    ax1.set_title('Distribution of ' + column + 'in AZDIAS')
+    ax1.set_title('Distribution of ' + column + ' in AZDIAS')
     sns.countplot(x = column, data=df2, ax=ax2, palette="husl")
     ax2.set_xlabel('Value')
-    ax2.set_title('Distribution of ' + column + 'in CUSTOMER')
+    ax2.set_title('Distribution of ' + column + ' in CUSTOMER')
     fig.tight_layout()
     plt.show()
 
 
-def data_pre_process(df):
+def data_pre_process(df, drop=True):
     '''
     This method performs following preprocessing steps on data
 
     Input:
-        df: The dataframe to perform preprocessing on
+        df: The dataframe to perform preprocessing steps
 
     Output:
         df: The preprocessed dataframe
         '''
 
     labelEncoder = LabelEncoder()
+    scaling = StandardScaler()
+    imputer = SimpleImputer()
+
 
     df['CAMEO_DEU_2015'] = df[['CAMEO_DEU_2015']].fillna(value = '0')
     df['CAMEO_DEU_2015'] = labelEncoder.fit_transform(df['CAMEO_DEU_2015'])
@@ -108,7 +119,7 @@ def data_pre_process(df):
 
     df['EXTSEL992'] = df[['EXTSEL992']].fillna(value = df['EXTSEL992'].median())
 
-    #let's set unknow to 0
+
     df['KK_KUNDENTYP'] = df[['KK_KUNDENTYP']].fillna(value = 0.0)
 
     df['ALTER_KIND1'] = df['ALTER_KIND1'].apply(lambda x: 0 if type(x) != int else x)
@@ -116,13 +127,107 @@ def data_pre_process(df):
     df['ALTER_KIND3'] = df['ALTER_KIND3'].apply(lambda x: 0 if type(x) != int else x)
     df['ALTER_KIND4'] = df['ALTER_KIND4'].apply(lambda x: 0 if type(x) != int else x)
 
-
-    df['YEAR_ADDED'] = df['EINGEFUEGT_AM'].apply(lambda x: -1 if str(x) == 'nan'
+    try:
+        df['YEAR_ADDED'] = df['EINGEFUEGT_AM'].apply(lambda x: -1 if str(x) == 'nan'
                                                     else datetime.strptime(str(x), '%Y-%m-%d %H:%M:%S').year)
 
-    df.drop(columns=['EINGEFUEGT_AM'],inplace=True)
+        df.drop(columns=['EINGEFUEGT_AM'],inplace=True)
+    except:
+        pass
 
-    # dropping rest of NA values
+    try:
+        df.drop(columns=['LNR'],inplace=True)
+    except:
+        pass
+
+    columns = df.columns
+    df = pd.DataFrame(imputer.fit_transform(df),columns = columns)
+
+    if drop:
+        df.dropna(inplace = True)
+
+
+    return df
+
+def data_pre_process_test(df):
+    '''
+    This method performs following preprocessing steps on test data.
+
+    Input:
+        df: The dataframe to perform preprocessing on.
+
+    Output:
+        df: The preprocessed dataframe
+
+        '''
+
+    imputer = SimpleImputer()
+
+    df = df.drop(["ALTER_KIND4","ALTER_KIND3","ALTER_KIND2","ALTER_KIND1"],axis = 1)
+    df['CAMEO_DEUG_2015']=[-1 if i == "X" else i for i in df['CAMEO_DEUG_2015']]
+    df['CAMEO_INTL_2015']= [-1 if i == "XX" else i for i in df['CAMEO_INTL_2015']]
+    df["EINGEFUEGT_AM"] = df["EINGEFUEGT_AM"].astype("datetime64")
+    df["CAMEO_DEUG_2015"] = df["CAMEO_DEUG_2015"].astype("float64")
+    df["CAMEO_INTL_2015"] = df["CAMEO_INTL_2015"].astype("float64")
+    df["EINGEFUEGT_AM"] = df["EINGEFUEGT_AM"].apply(lambda x: x.year - 1991)
+
+    df["OST_WEST_KZ"] = df["OST_WEST_KZ"].replace({'W': 1,'O': 2,})
+
+
+    df['PRAEGENDE_JUGENDJAHR_decade'] =  df['PRAEGENDE_JUGENDJAHRE'].replace({
+        1: '1',2: '1',3: '2',4: '2',5: '3',6: '3',7: '3',8: '4',9: '4',10: '5',11: '5',12: '5',13: '5',14: '6',15: '6'})
+
+    df['PRAEGENDE_JUGENDJAHR_movements'] = df['PRAEGENDE_JUGENDJAHRE'].replace({
+        1: 2,2: 1,3: 2,4: 1,5: 2,6: 1,7: 1,8: 2,9: 1,10: 2,11: 1,12: 2,13: 1,14: 2,15: 1})
+
+    df['CAMEO_INTL_2015_wealth'] = df['CAMEO_INTL_2015'].replace({
+        11: 5,12: 5,13: 5,14: 5,15: 5,21: 4,22: 4,23: 4,24: 4,25: 4,31: 3,32: 3,33: 3,34: 3,35: 3,41: 2,42: 2,43: 2,44: 2,
+        45: 2,51: 1,52: 1,53: 1,54: 1,55: 1})
+
+    df['CAMEO_INTL_2015_lifestage'] = df['CAMEO_INTL_2015'].replace({
+        11: '1',12: '2',13: '3',14: '4',15: '5',21: '1',22: '2',23: '3',24: '4',25: '5',31: '1',32: '2',33: '3',34: '4',35: '5',
+        41: '1',42: '2',43: '3',44: '4',45: '5',51: '1',52: '2',53: '3',54: '4',55: '5'})
+
+    df['WOHNLAGE_rural'] = df['WOHNLAGE'].replace({
+        0: 2,1: 2,2: 2,3: 2,4: 2,5: 2,7: 1,8: 1})
+
+    df['WOHNLAGE_neighborhood'] = df['WOHNLAGE'].replace({
+        0: 1,1: 6,2: 5,3: 4,4: 3,5: 2,7: 1,8: 1})
+
+    df = df.drop(['PRAEGENDE_JUGENDJAHRE','CAMEO_INTL_2015','WOHNLAGE'],axis = 1)
+
+    df["D19_LETZTER_KAUF_BRANCHE"] = df["D19_LETZTER_KAUF_BRANCHE"].astype("category")
+    df["D19_LETZTER_KAUF_BRANCHE"] = df["D19_LETZTER_KAUF_BRANCHE"].cat.codes
+
+    df["CAMEO_DEU_2015"] = df["CAMEO_DEU_2015"].astype("category")
+    df["CAMEO_DEU_2015"] = df["CAMEO_DEU_2015"].cat.codes
+
+    #df = df.drop(corr[1],axis = 1)
+    columns = df.columns
+    df = pd.DataFrame(imputer.fit_transform(df),columns = columns)
+
     df.dropna(inplace = True)
 
     return df
+
+def classifier_GS(clf, param_grid, X_train, y_train):
+    '''
+    Fits a classifier to its training data and prints its ROC AUC score.
+
+    INPUT:
+    - clf (classifier): classifier to fit
+    - param_grid (dict): classifier parameters used with GridSearchCV
+    - X_train (DataFrame): training input
+    - y_train (DataFrame): training output
+
+    OUTPUT:
+    - classifier: input classifier fitted to the training data
+    '''
+
+    # cv uses StratifiedKFold
+    # scoring roc_auc available as parameter
+    grid = GridSearchCV(estimator=clf, param_grid=param_grid, scoring='roc_auc', cv=5)
+    grid.fit(X_train, y_train)
+    print(grid.best_score_)
+
+    return grid.best_estimator_
