@@ -1,6 +1,6 @@
 # Arvato-Udacity-Capstone
 
-n this project, I will analyze demographics data for customers of a mail-order sales company in Germany, comparing it against demographics information for the general population.
+In this project, I will analyze demographics data for customers of a mail-order sales company in Germany, comparing it against demographics information for the general population.
 
 Throughout this project, I will be focusing on the following:
 
@@ -10,6 +10,9 @@ Throughout this project, I will be focusing on the following:
 
 # Dataset
 The data for this project was provided by Arvato and cannot be shared publicly.
+
+# Kaggle link
+https://www.kaggle.com/c/udacity-arvato-identify-customers
 
 ## Libraries used:
 - numpy==1.18.3
@@ -32,10 +35,10 @@ This file contains helper methods to perform analysis above. It contains data pr
 
 # Results
 
-After training multiple machine learning models and comparing their results, Random Forest Classifier achieved the best results with ROC AUC score of 0.7. 
+After training multiple machine learning models and comparing their results, CatBoost Classifier achieved the best results with ROC AUC score of 0.80028 
 
 
 For detailed result analysis read the below Medium article: <br>
 
 **Medium post :**  
-
+https://medium.com/@malhotra.vaibhav0304/effectively-target-customers-use-data-for-customer-segmentation-fb6425b593fd
