@@ -26,7 +26,7 @@ https://www.kaggle.com/c/udacity-arvato-identify-customers
  - **Arvato Project Workbook.ipynb** <br>
 The notebook is divided into 3 major segments: <br>
  _Part 0: Get to Know the Data_ : In this part I have a look at the data and perform necessary data preprocessing steps like handling missing values, scaling the data and modifying column names. <br>
- _Part 1: Customer Segmentation Report_ : Performed PCA and Kmeans to describe the relationship between the demographics of the company's existing customers and the general population of Germany. <br>
+ _Part 1: Customer Segmentation Report_ : Performed PCA and k-means to describe the relationship between the demographics of the company's existing customers and the general population of Germany. <br>
  _Part 2: Supervised Learning Model_ : Here I have tested and finalized a classification model for prediction. Various models were tried and GridSearchCV was used for hypertuning paramteres for the final model. <br>
 
 - **Helper.py** <br>
